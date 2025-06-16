@@ -1,0 +1,85 @@
+# /etc/default/grub should have this line:
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash intel_iommu=on iommu=pt vfio-pci.ids=10de:2230,10de:1aef"
+Note: Having iommu=pt vfio-pci.ids=10de:2230,10de:1aef was the key
+> sudo update-grub
+> sudo reboot
+
+# can bring in blacklist directly here as well:
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash intel_iommu=on iommu=pt vfio-pci.ids=10de:2230,10de:1aef modprobe.blacklist=nouveau,nvidia,nvidia_drm,nvidiafb"
+# Next time will try that
+
+#vfio diagnostics
+> modinfo vfio (# check for built-in)
+> modinfo vfio_iommu_type1
+> modinfo vfio_pci
+
+# Search the kernel boot log specifically for VFIO activity (or lack thereof)
+> journalctl -b | grep -i vfio
+> cat /proc/cmdline
+BOOT_IMAGE=/boot/vmlinuz-5.15.0-139-generic root=UUID=8b31bf7d-0628-40dc-bf48-ab27378d3ddd ro quiet splash intel_iommu=on iommu=pt vfio-pci.ids=10de:2230,10de:1aef vt.handoff=7
+
+====================================================================
+> lspci -k | grep -EA3 'VGA|3D|Display|vfio-pci'
+
+# The above command now shows:
+86:00.0 VGA compatible controller: NVIDIA Corporation Device 2230 (rev a1)
+        Subsystem: NVIDIA Corporation Device 1459
+        Kernel driver in use: vfio-pci
+        Kernel modules: nvidiafb, nouveau, nvidia_drm, nvidia
+86:00.1 Audio device: NVIDIA Corporation Device 1aef (rev a1)
+        Subsystem: NVIDIA Corporation Device 1459
+        Kernel driver in use: vfio-pci
+        Kernel modules: snd_hda_intel
+====================================================================
+define the blacklist: /etc/modprobe.d/blacklist.conf
+update the order: /etc/modprobe.d/vfio-pci.conf
+#sudo update-initramfs -u -k all
+sudo update-initramfs -u
+
+
+Editied /etc/modules, but it is actaully doing nothing. Leaving it like that for now
+lsmod | grep vfio was returning nothing
+# reason is that they are already built in the kernel
+Since this command shows 'y' for the following params
+> cat /boot/config-$(uname -r) | grep VFIO
+CONFIG_VFIO=y
+CONFIG_VFIO_IOMMU_TYPE1=y
+CONFIG_VFIO_PCI=y
+
+# /etc/modules was empty. Added the vfio related lines there
+# The following apt install failed. updated /etc/apt/sources.list. Still did not help install vfio-pci-dkms. Alwasy gave an Error. Gemini was going in the wrong direction
+sudo apt install --reinstall vfio-pci-dkms -y
+====================================================================
+Also edited /etc/apt/sources.list to solve the above apt installation issue. That's a red herring.. We can revert back the apt sources.list from .bak
+We also editied /etc/modprobe.d/vfio-pci.conf to create soft dependencies. Might not be needed.
+====================================================================
+
+# 2. To make the second GPU claimed by the host and the NVIDIA driver instead of the vfio-pci, do the following:
+
+> sudo cp ~/amit-devel/VM-work/bind_host_gpu.sh /usr/local/bin/
+> sudo chmod 755 /usr/local/bin/bind_host_gpu.sh
+> sudo cp ~/amit-devel/VM-work/bind-host-gpu.service /etc/systemd/system/
+> sudo systemctl daemon-reexec
+> sudo systemctl daemon-reload
+> sudo systemctl enable bind-host-gpu.service
+
+========
+
+3. However, since both your GPUs have identical IDs, the vfio-pci module may try to bind both GPUs unless:
+
+You bind only the guest GPU early by PCI address
+
+Your host GPU is protected by early NVIDIA binding or manually unbound and re-bound
+
+The init-top hook allows you to take precise control by:
+
+Unbinding the guest GPU only
+
+Rebinding it explicitly to vfio-pci
+
+Leaving the host GPU untouched
+
+sudo mkdir -p /etc/initramfs-tools/scripts/init-top
+sudo vim /etc/initramfs-tools/scripts/init-top/vfio-pci
+
+
