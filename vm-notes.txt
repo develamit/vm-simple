@@ -1,0 +1,23 @@
+# VM commands
+
+# unless kvm is running/modules loaded we cannot use the VM
+sudo kvm-ok
+# to dynamically load the kvm modules
+sudo modprobe kvm_amd
+
+# virsh commands
+sudo virsh list --all
+sudo virsh start ubuntu2004-simple-server-vm
+sudo virsh reboot ubuntu2004-simple-server-vm
+sudo virsh shutdown ubuntu2004-simple-server-vm
+
+sudo virsh console ubuntu2004-simple-server-vm
+sudo virsh edit ubuntu2004-simple-server-vm
+sudo virsh dominfo ubuntu2004-simple-server-vm
+history | grep virsh | grep ubuntu2004-simple-server-vm
+
+
+# ssh into the VM
+ssh ubuntuvm@192.168.122.96
+password: p******3
+
