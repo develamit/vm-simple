@@ -1,0 +1,14 @@
+[Unit]
+Description=Bind Host GPU to NVIDIA Driver
+After=display-manager.service # Or gdm.service / lightdm.service depending on your DM
+Wants=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bind_host_gpu.sh
+RemainAfterExit=yes # Keep service active after script runs
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target
