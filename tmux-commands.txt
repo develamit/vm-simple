@@ -1,0 +1,18 @@
+# create a session
+tmux new -s amit-dev
+
+# attach to an existing session
+tmux attach -t amit-dev
+
+# inside tmux session
+# create a shell
+ctrl a + c
+
+# detach from session
+ctrl a + d
+
+# split vertically
+ctrl a + %
+
+# split horizontally
+ctrl a + "
