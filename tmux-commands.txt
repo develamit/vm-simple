@@ -1,6 +1,9 @@
 # create a session
 tmux new -s amit-dev
 
+# list all tmux sessions
+tmux ls
+
 # attach to an existing session
 tmux attach -t amit-dev
 
