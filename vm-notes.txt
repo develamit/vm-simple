@@ -8,6 +8,13 @@ sudo modprobe kvm_amd
 # virsh commands
 sudo virsh list --all
 sudo virsh start ubuntu2004-simple-server-vm
+
+# to find the networks
+sudo virsh net-list --all
+
+# to obtain the IP address of the VM
+sudo virsh net-dhcp-leases default
+
 sudo virsh reboot ubuntu2004-simple-server-vm
 sudo virsh shutdown ubuntu2004-simple-server-vm
 
